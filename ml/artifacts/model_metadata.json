@@ -1,0 +1,16 @@
+{
+    "model_type": "IsolationForest",
+    "feature_columns": [
+        "message_length",
+        "token_count",
+        "digit_count",
+        "has_error_keyword",
+        "has_block_id",
+        "has_ip_address"
+    ],
+    "training_rows_loaded": 100000,
+    "distinct_rows_used": 106,
+    "random_state": 42,
+    "contamination": "auto",
+    "label_status": "unlabeled_unsupervised_baseline"
+}
