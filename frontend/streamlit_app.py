@@ -41,7 +41,7 @@ log_line = st.text_area(
 
 if st.button("Analyze Log", type="primary"):
     if not log_line.strip():
-        st.warning("Please enter a log line before analyzing.")
+        st.warning("so Please enter a log line before analyzing.")
     else:
         try:
             with st.spinner("Analyzing log..."):
