@@ -1,12 +1,20 @@
 {
-  "generated_at": "2026-10-24T22:37:01.220369+00:00",
+  "generated_at": "2026-10-25T00:26:50.228784+00:00",
   "runbook_directory": "D:\\data science\\ML_projects\\opspilot-ai\\OpsPilot-AI\\knowledge_base\\runbooks",
   "summary": {
-    "total_documents": 0,
-    "ready": 0,
+    "total_documents": 1,
+    "ready": 1,
     "warnings": 0,
     "skipped": 0,
     "errors": 0
   },
-  "documents": []
+  "documents": [
+    {
+      "source": "hdfs_block_troubleshooting.md",
+      "title": "hdfs block troubleshooting",
+      "status": "ready",
+      "character_count": 1594,
+      "word_count": 229
+    }
+  ]
 }

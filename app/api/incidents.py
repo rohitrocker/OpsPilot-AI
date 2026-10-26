@@ -6,12 +6,21 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
-
+from app.schemas.incident import DiagnosisRequest, DiagnosisResponse
 from app.services.classifier import AnomalyClassifier
 from app.services.log_parser import prepare_log_for_prediction
-
+from app.agents.workflow import run_diagnosis
+from app.schemas.incident import (
+    DiagnosisRequest,
+    DiagnosisResponse,
+    IncidentFeatures,
+    IncidentPrediction,
+    LogAnalysisResponse,
+    RawLogRequest,
+)
 
 router = APIRouter(prefix="/incidents", tags=["Incidents"])
+
 
 
 class IncidentFeatures(BaseModel):
@@ -46,6 +55,47 @@ class LogAnalysisResponse(IncidentPrediction):
     parsed_log: dict[str, Any]
     features: dict[str, int]
 
+
+class DiagnosisRequest(BaseModel):
+    """Raw log submitted for end-to-end incident diagnosis."""
+
+    log_line: str = Field(min_length=1, max_length=10_000)
+    top_k: int = Field(default=3, ge=1, le=10)
+
+
+
+@router.post(
+    "/diagnose",
+    response_model=DiagnosisResponse,
+    status_code=status.HTTP_200_OK,
+)
+def diagnose_incident(
+    request: DiagnosisRequest,
+) -> dict[str, Any]:
+    """Run the full anomaly detection and runbook retrieval workflow."""
+    try:
+        return run_diagnosis(
+            log_line=request.log_line,
+            top_k=request.top_k,
+        )
+
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Required model or knowledge-base files are unavailable.",
+        ) from exc
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred during diagnosis.",
+        ) from exc
 
 @lru_cache(maxsize=1)
 def get_classifier() -> AnomalyClassifier:
