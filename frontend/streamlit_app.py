@@ -158,6 +158,23 @@ if st.button("Analyze Log", type="primary"):
                 for limitation in limitations:
                     st.markdown(f"- {limitation}")
 
+
+                # LLM-generated explanation
+                st.divider()
+                st.subheader("AI-Generated Incident Explanation")
+
+                llm_status = result.get("llm_status", "unavailable")
+                llm_explanation = result.get("llm_explanation")
+
+                if llm_status == "success" and llm_explanation:
+                    st.markdown(llm_explanation)
+                else:
+                    st.warning(
+                        "The AI explanation is currently unavailable. "
+                        "You can still use the rule-based assessment and "
+                        "troubleshooting results above."
+                    )
+
                 st.subheader("Troubleshooting Guidance")
                 troubleshooting = result["troubleshooting"]
                 runbooks = troubleshooting.get("runbooks", [])
