@@ -108,6 +108,56 @@ if st.button("Analyze Log", type="primary"):
                 st.subheader("Assessment")
                 st.write(result["assessment"])
 
+
+                # Structured incident assessment
+                incident_assessment = result.get("incident_assessment", {})
+
+                st.subheader("Incident Assessment")
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.write("**Component**")
+                    st.write(incident_assessment.get("component", "Unknown"))
+
+                with col2:
+                    st.write("**Log level**")
+                    st.write(incident_assessment.get("log_level", "Unknown"))
+
+                st.write("**Observed message**")
+                st.write(
+                    incident_assessment.get(
+                        "observed_message",
+                        "No message available",
+                    )
+                )
+
+                st.write("**Root cause**")
+                root_cause = incident_assessment.get("root_cause")
+
+                if root_cause:
+                    st.write(root_cause)
+                else:
+                    st.info(
+                        "Root cause has not been established. "
+                        "Further investigation is required."
+                    )
+
+                st.write("**Recommended next steps**")
+                recommendations = incident_assessment.get("recommendations", [])
+
+                if recommendations:
+                    for recommendation in recommendations:
+                        st.markdown(f"- {recommendation}")
+                else:
+                    st.write("No recommendations available.")
+
+                st.write("**Limitations**")
+                limitations = incident_assessment.get("limitations", [])
+
+                for limitation in limitations:
+                    st.markdown(f"- {limitation}")
+
                 st.subheader("Troubleshooting Guidance")
                 troubleshooting = result["troubleshooting"]
                 runbooks = troubleshooting.get("runbooks", [])
