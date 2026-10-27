@@ -49,13 +49,14 @@ class LogAnalysisResponse(IncidentPrediction):
     features: dict[str, int]
 
 
-class DiagnosisResponse(BaseModel):
-    """Structured response from the full diagnosis workflow."""
 
+class DiagnosisResponse(BaseModel):
     status: Literal["anomaly_flagged", "no_anomaly_flagged"]
     incident: dict[str, str]
     analysis: dict[str, Any]
     troubleshooting: dict[str, Any]
     assessment: str
+    incident_assessment: dict[str, Any]
     evidence_available: bool
     limitations: list[str]
+
