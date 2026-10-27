@@ -48,8 +48,6 @@ class LogAnalysisResponse(IncidentPrediction):
     parsed_log: dict[str, Any]
     features: dict[str, int]
 
-
-
 class DiagnosisResponse(BaseModel):
     status: Literal["anomaly_flagged", "no_anomaly_flagged"]
     incident: dict[str, str]
@@ -57,6 +55,9 @@ class DiagnosisResponse(BaseModel):
     troubleshooting: dict[str, Any]
     assessment: str
     incident_assessment: dict[str, Any]
+    llm_explanation: str | None = None
+    llm_status: Literal["success", "unavailable"]
+    llm_error: str | None = None
     evidence_available: bool
     limitations: list[str]
 

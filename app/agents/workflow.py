@@ -3,16 +3,17 @@ from typing import Any
 
 from app.agents.tools import diagnose_log
 from app.services.incident_assessor import assess_incident
+from app.services.llm_explainer import explain_incident
 
 
 class IncidentWorkflow:
-    """Coordinate log diagnosis and incident assessment."""
+    """Coordinate anomaly detection, runbook retrieval, and explanation."""
 
     def __init__(self, top_k: int = 3) -> None:
         if isinstance(top_k, bool) or not isinstance(top_k, int):
             raise ValueError("top_k must be an integer.")
 
-        if top_k < 1 or top_k > 10:
+        if not 1 <= top_k <= 10:
             raise ValueError("top_k must be between 1 and 10.")
 
         self.top_k = top_k
@@ -24,7 +25,7 @@ class IncidentWorkflow:
         if not log_line.strip():
             raise ValueError("log_line cannot be empty.")
 
-        # Step 1: Parse the log, predict anomalies, and retrieve runbooks.
+        # 1. Parse the log, predict anomalies, and retrieve runbooks.
         result = diagnose_log(
             log_line=log_line,
             top_k=self.top_k,
@@ -33,14 +34,33 @@ class IncidentWorkflow:
         prediction = result["analysis"]["prediction"]
         runbooks = result["troubleshooting"]["runbooks"]
 
-        # Step 2: Build a structured incident assessment.
+        # 2. Generate the rule-based assessment.
         incident_assessment = assess_incident(
             incident=result["incident"],
             prediction=prediction,
             runbooks=runbooks,
         )
 
-        # Step 3: Return the combined diagnosis.
+        # 3. Generate an LLM explanation without breaking diagnosis
+        #    if the external LLM service is unavailable.
+        try:
+            llm_explanation = explain_incident(
+                incident=result["incident"],
+                prediction=prediction,
+                runbooks=runbooks,
+            )
+            llm_status = "success"
+            llm_error = None
+
+        except Exception:
+            llm_explanation = None
+            llm_status = "unavailable"
+            llm_error = (
+                "The AI explanation could not be generated. "
+                "Use the rule-based assessment and troubleshooting results."
+            )
+
+        # 4. Return the complete diagnosis.
         return {
             "status": incident_assessment["status"],
             "incident": result["incident"],
@@ -48,6 +68,9 @@ class IncidentWorkflow:
             "troubleshooting": result["troubleshooting"],
             "assessment": incident_assessment["summary"],
             "incident_assessment": incident_assessment,
+            "llm_explanation": llm_explanation,
+            "llm_status": llm_status,
+            "llm_error": llm_error,
             "evidence_available": bool(runbooks),
             "limitations": incident_assessment["limitations"],
         }
@@ -58,5 +81,4 @@ def run_diagnosis(
     top_k: int = 3,
 ) -> dict[str, Any]:
     """Run the complete incident diagnosis workflow."""
-    workflow = IncidentWorkflow(top_k=top_k)
-    return workflow.run(log_line)
+    return IncidentWorkflow(top_k=top_k).run(log_line)
