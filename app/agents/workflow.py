@@ -4,6 +4,9 @@ from typing import Any
 from app.agents.tools import diagnose_log
 from app.services.incident_assessor import assess_incident
 from app.services.llm_explainer import explain_incident
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class IncidentWorkflow:
@@ -41,8 +44,7 @@ class IncidentWorkflow:
             runbooks=runbooks,
         )
 
-        # 3. Generate an LLM explanation without breaking diagnosis
-        #    if the external LLM service is unavailable.
+        # 3. Generate the LLM explanation.
         try:
             llm_explanation = explain_incident(
                 incident=result["incident"],
@@ -52,13 +54,19 @@ class IncidentWorkflow:
             llm_status = "success"
             llm_error = None
 
-        except Exception:
+        except Exception as exc:
+            # Keep diagnosis available if the external LLM fails.
+            logger.warning(
+                "LLM explanation unavailable: %s",
+                type(exc).__name__,
+            )
             llm_explanation = None
             llm_status = "unavailable"
             llm_error = (
-                "The AI explanation could not be generated. "
-                "Use the rule-based assessment and troubleshooting results."
+                "AI explanation unavailable. "
+                "Use the rule-based assessment and retrieved evidence."
             )
+
 
         # 4. Return the complete diagnosis.
         return {

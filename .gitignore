@@ -1,9 +1,31 @@
+
+# Secrets
 .env
 .env.*
 !.env.example
-.venv/
-venv/
+
+# Python
 __pycache__/
 *.py[cod]
-ml/data/*.log
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Generated model and data files
 ml/data/*.csv
+ml/artifacts/*.joblib
+ml/artifacts/*.pkl
+
+# Local IDE files
+.vscode/
+.idea/
+
+# Large raw datasets
+ml/data/sorted.log
+
+# Large raw datasets
+ml/data/sorted.log
+
+# Large raw datasets
+ml/data/sorted.log
