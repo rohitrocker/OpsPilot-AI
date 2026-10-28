@@ -1,115 +1,164 @@
-# OpsPilot-AI
 
-**An AI-powered incident diagnosis and resolution copilot for
-troubleshooting operational and infrastructure logs.**
+# OpsPilot AI — Agentic Incident Diagnosis & Resolution Copilot
 
-OpsPilot-AI is a learning and development project that combines log
-processing, machine learning, retrieval-augmented generation (RAG), and
-agent-based workflows to help investigate incidents, surface relevant
-runbooks, and suggest troubleshooting steps.
+An AI-powered incident diagnosis system that analyzes system logs, detects anomalous behavior, retrieves relevant troubleshooting runbooks, and generates evidence-based incident explanations.
 
-> **Project status:** In development. Available features depend on which
-> modules have been implemented and configured in your local
-> environment. Review the source code and configuration before relying
-> on any generated diagnosis or recommendation.
+OpsPilot AI combines machine learning, log processing, retrieval-based troubleshooting, rule-based assessment, and large language models to help engineers investigate unusual system activity.
 
-## Contents
+> **Project status:** Local Docker deployment configured. Verify container health, test results, and public deployment status before claiming production readiness.
 
--   [Overview](#overview)
--   [Goals](#goals)
--   [Architecture](#architecture)
--   [Repository Structure](#repository-structure)
--   [Technology Stack](#technology-stack)
--   [How the Workflow Is Intended to
-    Work](#how-the-workflow-is-intended-to-work)
--   [Getting Started](#getting-started)
--   [Configuration](#configuration)
--   [Running the Project](#running-the-project)
--   [Data](#data)
--   [Evaluation and Testing](#evaluation-and-testing)
--   [Security and Responsible Use](#security-and-responsible-use)
--   [Roadmap](#roadmap)
--   [Contributing](#contributing)
--   [License](#license)
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Problem Statement](#problem-statement)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Dataset](#dataset)
+- [Machine Learning Pipeline](#machine-learning-pipeline)
+- [Incident Diagnosis Workflow](#incident-diagnosis-workflow)
+- [API Documentation](#api-documentation)
+- [Installation and Setup](#installation-and-setup)
+- [Docker Deployment](#docker-deployment)
+- [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Limitations](#limitations)
+- [Future Improvements](#future-improvements)
+- [Security](#security)
+- [Author](#author)
+
+---
 
 ## Overview
 
-Operational incidents often require engineers to inspect noisy logs,
-identify likely failure patterns, locate relevant documentation, and
-decide what to investigate next. OpsPilot-AI is designed to bring these
-steps into one workflow.
+OpsPilot AI is a diagnostic copilot for investigating unusual system log records.
 
-The project is organized around these capabilities:
+The system accepts a raw log line, parses its fields, extracts numerical features, and uses an Isolation Forest model to flag unusual records. It then retrieves relevant troubleshooting runbooks, produces a rule-based incident assessment, and can request an LLM-generated explanation.
 
--   **Log processing:** parse raw log files and convert log messages
-    into structured records.
--   **Machine learning:** prepare features and train/evaluate a model
-    for incident or anomaly-related classification.
--   **Knowledge retrieval:** index troubleshooting notes and runbooks so
-    relevant guidance can be retrieved for an incident.
--   **Agent workflow:** coordinate investigation steps and supporting
-    tools.
--   **API and interface:** expose backend functionality through an API
-    and provide a Streamlit-based interface.
+The application exposes its functionality through a FastAPI backend and a Streamlit frontend.
 
-The exact behavior depends on the modules and integrations implemented
-in the current version.
+### What it does
 
-## Goals
+1. Accepts raw system log records.
+2. Parses structured information from HDFS-style logs.
+3. Extracts features for anomaly detection.
+4. Uses a trained Isolation Forest model to flag unusual records.
+5. Retrieves relevant troubleshooting documentation.
+6. Produces a structured incident assessment.
+7. Generates an LLM explanation when the configured provider is available.
+8. Exposes the workflow through REST API endpoints and a web interface.
 
-1.  Turn raw operational logs into structured data that can be analyzed.
-2.  Build a repeatable preprocessing, training, and evaluation pipeline.
-3.  Retrieve relevant runbooks and troubleshooting knowledge.
-4.  Combine model outputs and retrieved context to support incident
-    investigation.
-5.  Provide a maintainable foundation for an API, user interface, and
-    tests.
+---
+
+## Problem Statement
+
+System logs contain large volumes of operational information. Investigating unusual records manually can be time-consuming, particularly when engineers need to correlate log messages with troubleshooting documentation.
+
+OpsPilot AI aims to simplify the initial investigation process by combining automated anomaly detection with contextual troubleshooting guidance.
+
+The system is designed to assist engineers, not replace human incident responders. An anomaly flag is a signal for investigation, not proof of a confirmed production incident or root cause.
+
+---
+
+## Key Features
+
+### Machine Learning
+- Isolation Forest-based anomaly detection.
+- Feature extraction from HDFS-style log messages.
+- Reusable model artifacts for inference.
+- Structured anomaly prediction results.
+
+### Log Processing
+- Parses timestamps, process identifiers, log levels, components, and messages.
+- Extracts message-based numerical features.
+- Handles log records through a reusable parsing service.
+
+### Troubleshooting Retrieval
+- Loads troubleshooting documents from a local runbook directory.
+- Retrieves candidate runbooks based on query relevance.
+- Returns supporting troubleshooting guidance when matches are available.
+
+### Incident Assessment
+- Produces a structured incident summary.
+- Includes anomaly scores and relevant diagnostic evidence.
+- Provides recommended investigation steps.
+- Represents unknown root causes explicitly rather than inventing them.
+
+### LLM-Powered Explanation
+- Generates a natural-language explanation from the available evidence.
+- Can include observations, possible interpretations, recommended checks, and uncertainty.
+- Supports graceful fallback when the LLM provider is unavailable.
+
+### API and Interface
+- FastAPI REST endpoints.
+- Interactive API documentation with Swagger UI.
+- Streamlit interface for submitting logs and reviewing diagnosis results.
+- Docker Compose configuration for running the application services.
+
+---
 
 ## Architecture
 
-``` text
-Raw logs / incident input
-          |
-          v
-   Log preprocessing
-          |
-          v
- Structured records and features
-          |
-          v
- ML classification / analysis
-          |
-          +--------------------------+
-          |                          |
-          v                          v
-  Incident context            Knowledge base
-                                     |
-                              Runbooks / docs
-                                     |
-                                     v
-                              Retrieval (RAG)
-          |                          |
-          +-------------+------------+
-                        |
-                        v
-                Agent workflow/tools
-                        |
-                        v
-             Diagnosis and recommendations
-                        |
-              +---------+---------+
-              |                   |
-              v                   v
-          Backend API       Streamlit UI
+```mermaid
+flowchart TD
+    A[Raw HDFS Log] --> B[Log Parser]
+    B --> C[Feature Extraction]
+    C --> D[Isolation Forest Classifier]
+    D --> E[Incident Assessment]
+    B --> F[Incident Context]
+    E --> G[Runbook Retrieval]
+    F --> G
+    G --> H[LLM Explanation]
+    E --> I[Structured Diagnosis]
+    G --> I
+    H --> I
+    I --> J[FastAPI]
+    J --> K[Streamlit Frontend]
 ```
 
-This diagram describes the intended high-level workflow, not a guarantee
-that every integration is already connected.
+The exact execution order is controlled by the workflow implementation. The diagram illustrates the major components and information flow.
 
-## Repository Structure
+### Component Responsibilities
 
-``` text
-opspilot-ai/
+| Component | Responsibility |
+|---|---|
+| Log Parser | Parses raw log lines into structured fields |
+| Feature Extractor | Converts log information into model features |
+| Anomaly Classifier | Flags records that appear unusual |
+| Runbook Retriever | Searches local troubleshooting documents |
+| Incident Assessor | Builds a structured, rule-based assessment |
+| LLM Explainer | Generates a natural-language explanation |
+| FastAPI | Exposes prediction and diagnosis endpoints |
+| Streamlit | Provides the interactive user interface |
+| Docker Compose | Coordinates backend and frontend containers |
+
+---
+
+## Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Language | Python |
+| Data Processing | pandas, NumPy |
+| Machine Learning | scikit-learn, Isolation Forest |
+| Model Persistence | joblib |
+| Backend | FastAPI, Uvicorn |
+| Validation | Pydantic |
+| Frontend | Streamlit |
+| LLM Integration | LangChain Groq integration |
+| Testing | pytest |
+| Containers | Docker, Docker Compose |
+| Version Control | Git, GitHub |
+
+---
+
+## Project Structure
+
+```text
+OpsPilot-AI/
 ├── app/
 │   ├── main.py
 │   ├── api/
@@ -120,16 +169,19 @@ opspilot-ai/
 │   ├── services/
 │   │   ├── log_parser.py
 │   │   ├── classifier.py
-│   │   └── rag_service.py
+│   │   ├── rag_service.py
+│   │   ├── incident_assessor.py
+│   │   └── llm_explainer.py
 │   └── agents/
 │       ├── workflow.py
 │       └── tools.py
 ├── ml/
 │   ├── data/
+│   ├── artifacts/
 │   ├── preprocess.py
+│   ├── features.py
 │   ├── train.py
-│   ├── evaluate.py
-│   └── artifacts/
+│   └── evaluate.py
 ├── knowledge_base/
 │   ├── runbooks/
 │   └── ingestion.py
@@ -138,260 +190,413 @@ opspilot-ai/
 ├── tests/
 ├── evaluation/
 ├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
+├── .dockerignore
 └── README.md
 ```
 
-Some files or folders may be added as development progresses. Update
-this tree if your repository differs.
+Some generated artifacts and local datasets may be excluded from version control. The actual directory contents may differ slightly as the project evolves.
 
-## Technology Stack
+---
 
-The project is designed around the following tools; check
-`requirements.txt` and the implementation to confirm which are currently
-in use.
+## Dataset
 
--   **Python** --- core development language
--   **Pandas / NumPy** --- data preparation and feature processing,
-    where used
--   **Scikit-learn** --- machine-learning pipeline, where configured
--   **FastAPI** --- backend API
--   **Streamlit** --- user interface
--   **RAG components** --- retrieve relevant knowledge from runbooks and
-    documentation
--   **LLM / agent framework** --- coordinate reasoning and tool use,
-    depending on configuration
--   **Docker** --- containerization support
+The project was developed using HDFS-style system log data from the Log Data for Anomaly Detection dataset.
 
-## How the Workflow Is Intended to Work
+Example log record:
 
-1.  **Ingest logs:** provide a raw log file or incident input.
-2.  **Parse and preprocess:** extract useful fields and normalize
-    messages.
-3.  **Create features:** transform structured log data into features
-    appropriate for the ML pipeline.
-4.  **Train and evaluate:** train the configured model and assess it
-    with the evaluation scripts.
-5.  **Retrieve knowledge:** search runbooks and troubleshooting material
-    for relevant context.
-6.  **Investigate:** use the agent workflow and available tools to
-    combine incident evidence with retrieved information.
-7.  **Present results:** return the available diagnosis or suggestions
-    through the API or Streamlit interface.
+```text
+081109 203518 143 INFO dfs.DataNode$DataXceiver: Receiving block blk_-1608999687919862906 src: /10.250.19.102:54106 dest: /10.250.19.102:50010
+```
 
-Do not assume a step is active until its corresponding code and
-configuration have been tested.
+The parser extracts fields such as:
 
-## Getting Started
+- Date and time
+- Process identifier
+- Log level
+- Component
+- Message
+
+### Data Handling
+
+The raw dataset can be large. Keep the original log file locally or obtain it from its original source rather than committing it to GitHub.
+
+The expected local path for the raw file is:
+
+```text
+ml/data/sorted.log
+```
+
+The dataset should be excluded from Git using `.gitignore`.
+
+---
+
+## Machine Learning Pipeline
+
+The ML pipeline converts raw log records into numerical features and trains an unsupervised anomaly detector.
+
+### 1. Preprocessing
+
+`ml/preprocess.py`
+
+- Reads the raw log file incrementally.
+- Parses log records.
+- Writes structured data to `ml/data/parsed_hdfs_logs.csv`.
+
+### 2. Feature Extraction
+
+`ml/features.py`
+
+Extracts features such as:
+
+- Message length
+- Token count
+- Digit count
+- Presence of error-related keywords
+- Presence of block identifiers
+- Presence of IP addresses
+
+The generated feature dataset is saved to:
+
+```text
+ml/data/log_features.csv
+```
+
+### 3. Model Training
+
+`ml/train.py`
+
+- Loads a subset of available feature records.
+- Removes duplicate feature rows where applicable.
+- Applies feature scaling.
+- Trains an Isolation Forest model.
+- Saves the trained model and feature metadata.
+
+Expected artifacts:
+
+```text
+ml/artifacts/anomaly_model.joblib
+ml/artifacts/model_metadata.json
+```
+
+### 4. Model Evaluation
+
+`ml/evaluate.py`
+
+- Scores feature records using the trained model.
+- Flags unusual records.
+- Writes the flagged results and evaluation report.
+
+Expected outputs:
+
+```text
+ml/data/flagged_anomalies.csv
+ml/artifacts/evaluation_report.json
+```
+
+Because the current pipeline is unsupervised, reliable precision, recall, and F1-score require suitable ground-truth labels. Do not interpret an anomaly score as the probability that an incident is real.
+
+---
+
+## Incident Diagnosis Workflow
+
+The diagnosis workflow combines model predictions and troubleshooting evidence.
+
+### Step 1 — Input
+
+The user submits a raw log line and optionally specifies how many runbooks to retrieve.
+
+### Step 2 — Parsing and Feature Extraction
+
+The system extracts structured log fields and model-compatible numerical features.
+
+### Step 3 — Anomaly Detection
+
+The trained model returns a prediction and an anomaly score.
+
+### Step 4 — Runbook Retrieval
+
+The retrieval service searches the local troubleshooting knowledge base for potentially relevant documents.
+
+### Step 5 — Incident Assessment
+
+The rule-based assessment combines available observations and retrieval results into a structured summary and recommended checks.
+
+### Step 6 — LLM Explanation
+
+When configured and available, the LLM produces a human-readable explanation grounded in the supplied context.
+
+### Step 7 — Response
+
+The API returns the prediction, analysis, troubleshooting results, assessment, LLM status, and limitations.
+
+---
+
+## API Documentation
+
+Start the backend locally, then open:
+
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- Health endpoint: `http://127.0.0.1:8000/health`
+
+The available endpoints depend on the router configuration in `app/api/incidents.py`.
+
+Common endpoints in this project include:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/` | Application information |
+| GET | `/health` | Health check |
+| POST | `/incidents/predict` | Predict whether a record is anomalous |
+| POST | `/incidents/analyze` | Analyze a log record |
+| POST | `/incidents/diagnose` | Run the complete diagnosis workflow |
+
+Confirm the actual paths in Swagger UI before relying on this table.
+
+### Example Diagnosis Request
+
+Use `POST /incidents/diagnose` with a request body such as:
+
+```json
+{
+  "log_line": "081109 203518 143 INFO dfs.DataNode$DataXceiver: Receiving block blk_-1608999687919862906 src: /10.250.19.102:54106 dest: /10.250.19.102:50010",
+  "top_k": 3
+}
+```
+
+### Expected Response Content
+
+The exact response depends on the API schema and runtime results. A successful diagnosis may include:
+
+- `status`
+- `incident`
+- `analysis`
+- `troubleshooting`
+- `assessment`
+- `incident_assessment`
+- `llm_explanation`
+- `llm_status`
+- `evidence_available`
+- `limitations`
+
+Always inspect the actual response returned by your running API.
+
+---
+
+## Installation and Setup
 
 ### Prerequisites
 
--   Python compatible with the versions supported by your dependencies
--   Git
--   PowerShell on Windows, or a terminal on macOS/Linux
--   API credentials only if the selected LLM provider requires them
+Install the following:
 
-### 1. Clone the repository
+- Python 3.11
+- Git
+- Docker Desktop with the WSL 2 backend on Windows
+- A Groq API key if you want to use the hosted LLM explanation service
 
-Replace `YOUR_USERNAME` with your GitHub username:
+### 1. Clone the Repository
 
-``` bash
-git clone https://github.com/YOUR_USERNAME/OpsPilot-AI.git
+```bash
+git clone https://github.com/rohitrocker/OpsPilot-AI.git
 cd OpsPilot-AI
 ```
 
-### 2. Create a virtual environment
+### 2. Create a Virtual Environment
 
-**Windows PowerShell:**
+On Windows PowerShell:
 
-``` powershell
-python -m venv .venv
+```powershell
+py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks environment activation, you can run the
-environment's Python directly:
+### 3. Install Dependencies
 
-``` powershell
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-```
-
-**macOS/Linux:**
-
-``` bash
-python3 -m venv .venv
-source .venv/bin/activate
+```powershell
 python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-### 3. Install dependencies
+### 4. Configure Environment Variables
 
-``` bash
-python -m pip install -r requirements.txt
-```
+Copy the example configuration:
 
-If installation fails, check the Python version and package versions
-required by the error message. Keep `requirements.txt` synchronized with
-the dependencies the project actually uses.
-
-### 4. Configure environment variables
-
-If the project uses API keys or other secrets, copy the example file and
-fill in the required values:
-
-**Windows PowerShell:**
-
-``` powershell
+```powershell
 Copy-Item .env.example .env
 ```
 
-**macOS/Linux:**
+Edit `.env` and supply the required values:
 
-``` bash
-cp .env.example .env
+```dotenv
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL_NAME=your_supported_groq_model
 ```
 
-Add only the variable names required by your code. For example, if your
-chosen LLM provider requires a key, configure that provider's
-environment variable. Do not put real credentials in `.env.example`,
-source files, screenshots, or Git commits.
+Use a model identifier currently supported by your Groq account. Never commit `.env` or publish your API key.
 
-### 5. Prepare the data
+### 5. Prepare Model Artifacts
 
-Place permitted sample logs in the data directory expected by the
-preprocessing script. Confirm the input path and output filenames in
-`ml/preprocess.py` before running it.
+The application expects the trained model artifacts at:
 
-If your current dataset is an HDFS-style log file, check that the parser
-is designed for that format. Do not assume a log file automatically
-provides labeled examples for supervised training.
-
-## Running the Project
-
-Run commands from the repository root. Confirm the paths and
-command-line arguments in each script before execution.
-
-### Machine-learning pipeline
-
-``` powershell
-python .\ml\preprocess.py
-python .\ml\train.py
-python .\ml\evaluate.py
+```text
+ml/artifacts/anomaly_model.joblib
+ml/artifacts/model_metadata.json
 ```
 
-Run each stage separately and verify its output before continuing. These
-commands assume the corresponding scripts are implemented and runnable
-in your checkout.
+If these files are not included in the repository, prepare the dataset locally and run the preprocessing, feature extraction, and training scripts in the appropriate order.
 
-### Backend API
+The required artifact paths must exist before building the Docker image if the Dockerfile copies them during the build.
 
-If `app/main.py` exposes a FastAPI application object named `app`, start
-it with:
+---
 
-``` powershell
-python -m uvicorn app.main:app --reload
+## Docker Deployment
+
+Docker Compose runs the backend and frontend as separate services using the configured image.
+
+### 1. Start Docker Desktop
+
+Make sure Docker Desktop is running and its Linux engine is available.
+
+Verify:
+
+```powershell
+docker version
 ```
 
-Then open the API documentation at `http://127.0.0.1:8000/docs`.
+Both the Client and Server sections should be present.
 
-If your application object or entry point has a different name, adjust
-the command to match the code.
+### 2. Validate Compose Configuration
 
-### Streamlit interface
-
-If the Streamlit interface is implemented in
-`frontend/streamlit_app.py`, run:
-
-``` powershell
-python -m streamlit run .\frontend\streamlit_app.py
+```powershell
+docker compose config
 ```
 
-### Docker
+### 3. Build Images
 
-A `Dockerfile` is included in the project structure. Review it and
-ensure required environment variables, data files, and model artifacts
-are available before building or running the container.
+```powershell
+docker compose build
+```
 
-## Data
+### 4. Start Services
 
-The `ml/data/` directory is intended for input data and generated
-intermediate files. Large datasets, confidential logs, credentials, and
-personally identifiable information should not be committed to a public
-repository.
+```powershell
+docker compose up -d
+```
 
-For reproducible experiments:
+### 5. Check Container Status
 
--   Document the source and license of each dataset.
--   Keep a small, non-sensitive sample when it is useful for
-    demonstrating the pipeline.
--   Record preprocessing assumptions and label definitions.
--   Separate raw data from generated features and model artifacts.
--   Avoid reporting model performance unless it has been measured on a
-    clearly defined evaluation set.
+```powershell
+docker compose ps
+```
 
-## Evaluation and Testing
+### 6. Inspect Logs
 
-Use the `ml/evaluate.py` script and the `tests/` and `evaluation/`
-directories for validation as they are implemented.
+```powershell
+docker compose logs --tail 100 backend
+docker compose logs --tail 100 frontend
+```
 
-Recommended checks include:
+### 7. Open the Application
 
--   Parser behavior on valid, malformed, and empty log input
--   Feature-generation consistency
--   Train/validation/test separation and prevention of data leakage
--   Appropriate classification metrics, such as precision, recall,
-    F1-score, and a confusion matrix, when relevant
--   Retrieval relevance and whether recommendations are grounded in the
-    retrieved runbook
--   API validation and error handling
--   Tests that confirm failures do not trigger unsafe automated actions
+- Streamlit frontend: `http://localhost:8501`
+- FastAPI Swagger UI: `http://localhost:8000/docs`
 
-Record actual results in the repository only after running the
-evaluation.
+### Stop Services
 
-## Security and Responsible Use
+```powershell
+docker compose down
+```
 
--   Never commit `.env`, API keys, passwords, tokens, or private
-    incident logs.
--   Keep `.env` and local virtual environments in `.gitignore`.
--   Sanitize logs before sending them to external LLM providers.
--   Treat model output as an aid to investigation, not proof of root
-    cause.
--   Require human review and authorization before executing remediation
-    steps in production.
--   Use least-privilege credentials and audit any tool that can change
-    infrastructure.
--   Review third-party dataset and dependency licenses before
-    redistribution.
+**Note:** These commands describe local container deployment. They do not publish the application to a public cloud service.
 
-## Roadmap
+---
 
-Potential next steps for the project:
+## Environment Variables
 
--   [ ] Complete and validate log parsing and feature extraction
--   [ ] Establish a documented training and evaluation dataset
--   [ ] Add baseline metrics and reproducible evaluation
--   [ ] Complete runbook ingestion and retrieval evaluation
--   [ ] Connect the incident API to the ML and retrieval services
--   [ ] Add agent workflow tests and failure handling
--   [ ] Improve the Streamlit interface with incident details and
-    evidence
--   [ ] Add Docker-based setup instructions and a deployment checklist
--   [ ] Document limitations, sample inputs, and example outputs
+| Variable | Purpose |
+|---|---|
+| `GROQ_API_KEY` | Authenticates requests to the Groq API |
+| `GROQ_MODEL_NAME` | Selects the supported LLM model |
+| `API_URL` | Backend URL used by the frontend; for Docker Compose, this is typically `http://backend:8000` |
 
-Mark items complete only after they are implemented and tested.
+Only variables actually consumed by your application need to be configured. Add other required variables to `.env.example` as the project evolves.
 
-## Contributing
+Never store real secrets in `.env.example`, source code, screenshots, or Git commits.
 
-1.  Create a feature branch.
-2.  Keep changes focused and document configuration changes.
-3.  Add or update tests for behavior changes.
-4.  Never include secrets or private log data in commits.
-5.  Open a pull request with a summary and test results.
+---
 
-## License
+## Testing
 
-No license is specified here. Add a `LICENSE` file before granting
-others permission to reuse, modify, or distribute this project.
+Run the test suite from the project root:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/ -v
+```
+
+The test suite may cover:
+
+- API health and validation
+- Log parsing and feature extraction
+- Runbook retrieval
+- Incident assessment
+- Diagnosis workflow
+- LLM explanation behavior
+- Graceful fallback when the LLM is unavailable
+
+Use mocks for external LLM calls in automated unit tests so that the tests do not require a real API request.
+
+Record the actual test results before claiming that all tests pass.
+
+---
+
+## Limitations
+
+- **Anomaly flags are not confirmed incidents.** Isolation Forest detects records that differ from learned patterns.
+- **Ground truth may be unavailable.** Unsupervised evaluation alone does not establish real-world incident detection accuracy.
+- **Retrieval quality depends on documentation.** Missing or incomplete runbooks can produce no useful matches.
+- **Keyword retrieval is limited.** If the current retriever uses keyword overlap, semantically similar queries may not retrieve the best runbook.
+- **LLM output can be incorrect.** Explanations should be treated as investigation assistance and verified against evidence.
+- **Root cause is not guaranteed.** The system must distinguish observed facts from hypotheses.
+- **Deployment status matters.** Local Docker execution is different from a publicly hosted production service.
+
+---
+
+## Future Improvements
+
+- Implement embedding-based retrieval using FAISS or ChromaDB.
+- Add semantic search and citations to retrieved runbook passages.
+- Evaluate anomaly detection using labeled data where available.
+- Measure retrieval relevance, API latency, and false-positive behavior.
+- Add monitoring, structured logs, and request tracing.
+- Add CI with GitHub Actions.
+- Introduce authentication and rate limiting for public API access.
+- Deploy the API and frontend to a suitable hosting platform.
+- Add human feedback to improve incident triage and runbook quality.
+
+---
+
+## Security
+
+- Keep `.env` out of version control.
+- Revoke and replace any API keys accidentally exposed.
+- Do not commit large raw datasets or private operational logs.
+- Avoid placing secrets in Docker image layers.
+- Apply authentication and appropriate request limits before exposing the API publicly.
+- Treat model outputs and LLM explanations as advisory rather than automatic authorization to execute remediation actions.
+
+---
+
+## Author
+
+**Rohit Thakur**
+
+GitHub: [@rohitrocker](https://github.com/rohitrocker)
+
+---
+
+## Disclaimer
+
+OpsPilot AI is an engineering project for log analysis and incident investigation assistance. It is not a substitute for validated production monitoring, human incident response, or operational change approval.
