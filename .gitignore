@@ -24,8 +24,3 @@ ml/artifacts/*.pkl
 # Large raw datasets
 ml/data/sorted.log
 
-# Large raw datasets
-ml/data/sorted.log
-
-# Large raw datasets
-ml/data/sorted.log

@@ -52,7 +52,7 @@ def inspect_runbook(path: Path) -> dict[str, object]:
         return {
             "source": relative_path,
             "status": "warning",
-            "reason": "Document is very short; review its content.",
+            "r eason": "Document is very short; review its content.",
             "character_count": len(content),
         }
 
