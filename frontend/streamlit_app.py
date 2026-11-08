@@ -6,8 +6,9 @@ import os
 
 API_URL = os.getenv(
     "API_URL",
-    "http://127.0.0.1:8000",
-)
+    "https://opspilot-ai-1-483h.onrender.com",
+).rstrip("/")
+
 st.set_page_config(
     page_title="OpsPilot AI",
     page_icon="🛠️",
@@ -221,8 +222,7 @@ if st.button("Analyze Log", type="primary"):
 
         except requests.exceptions.ConnectionError:
             st.error(
-                "Cannot connect to FastAPI. "
-                "Start the backend at http://127.0.0.1:8000 first."
+                "Unable to connect to the OpsPilot AI backend. Please check that the backend service is running."
             )
         except requests.exceptions.Timeout:
             st.error("The API request timed out. Please try again.")
